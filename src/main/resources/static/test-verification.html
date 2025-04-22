@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Razorpay Payment Verification Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        h1, h2 {
+            color: #3f51b5;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+            min-height: 50px;
+        }
+        .error {
+            color: #e53935;
+        }
+        .success {
+            color: #43a047;
+        }
+    </style>
+</head>
+<body>
+    <h1>Razorpay Payment Verification Test</h1>
+    
+    <div class="container">
+        <h2>Verify Payment</h2>
+        <div class="form-group">
+            <label for="payment_id">Payment ID:</label>
+            <input type="text" id="payment_id" placeholder="e.g., pay_123456789">
+        </div>
+        <div class="form-group">
+            <label for="order_id">Order ID:</label>
+            <input type="text" id="order_id" placeholder="e.g., order_123456789">
+        </div>
+        <div class="form-group">
+            <label for="signature">Signature (optional):</label>
+            <input type="text" id="signature" placeholder="Will attempt auto-generation if empty">
+        </div>
+        <button onclick="verifyPayment()">Verify Payment</button>
+        <div id="result"></div>
+    </div>
+    
+    <div class="container">
+        <h2>Check Payment Status</h2>
+        <div class="form-group">
+            <label for="check_payment_id">Payment ID:</label>
+            <input type="text" id="check_payment_id" placeholder="e.g., pay_123456789">
+        </div>
+        <button onclick="checkPaymentStatus()">Check Status</button>
+        <div id="status_result"></div>
+    </div>
+    
+    <script>
+        async function verifyPayment() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Processing...';
+            resultDiv.className = '';
+            
+            try {
+                const paymentId = document.getElementById('payment_id').value.trim();
+                const orderId = document.getElementById('order_id').value.trim();
+                const signature = document.getElementById('signature').value.trim();
+                
+                if (!paymentId) {
+                    throw new Error('Payment ID is required');
+                }
+                
+                const requestBody = {
+                    razorpay_payment_id: paymentId,
+                    razorpay_order_id: orderId
+                };
+                
+                if (signature) {
+                    requestBody.razorpay_signature = signature;
+                }
+                
+                const response = await fetch('/api/razorpay-verify-payment', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok && data.success) {
+                    resultDiv.innerHTML = '<div class="success">✓ Payment verified successfully</div>' +
+                                         '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                } else {
+                    resultDiv.innerHTML = '<div class="error">✗ Payment verification failed</div>' +
+                                         '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = '<div class="error">Error: ' + error.message + '</div>';
+            }
+        }
+        
+        async function checkPaymentStatus() {
+            const resultDiv = document.getElementById('status_result');
+            resultDiv.innerHTML = 'Checking status...';
+            resultDiv.className = '';
+            
+            try {
+                const paymentId = document.getElementById('check_payment_id').value.trim();
+                
+                if (!paymentId) {
+                    throw new Error('Payment ID is required');
+                }
+                
+                const response = await fetch(`/api/razorpay-payment-status?payment_id=${paymentId}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                } else {
+                    resultDiv.innerHTML = '<div class="error">Error checking payment status</div>' +
+                                         '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                }
+            } catch (error) {
+                resultDiv.innerHTML = '<div class="error">Error: ' + error.message + '</div>';
+            }
+        }
+    </script>
+</body>
+</html> 

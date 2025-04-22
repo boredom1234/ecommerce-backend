@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Razorpay Auto-Verification Demo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        h1, h2 {
+            color: #3f51b5;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+            min-height: 50px;
+        }
+        .error {
+            color: #e53935;
+            background-color: #ffebee;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        .success {
+            color: #43a047;
+            background-color: #e8f5e9;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        .processing {
+            color: #1565c0;
+            background-color: #e3f2fd;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        #status-area {
+            margin-top: 20px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Razorpay Auto-Verification Demo</h1>
+    
+    <div class="container">
+        <h2>Create Order and Pay</h2>
+        <div class="form-group">
+            <label for="amount">Amount (INR):</label>
+            <input type="number" id="amount" value="100" min="1" step="1">
+        </div>
+        <div class="form-group">
+            <label for="receipt">Order Receipt:</label>
+            <input type="text" id="receipt" value="order_receipt_1" placeholder="e.g., order_receipt_1">
+        </div>
+        <button onclick="createOrderAndPay()">Create Order & Pay</button>
+        
+        <div id="status-area">
+            <div id="status-message" class="processing"></div>
+            <div id="result"></div>
+        </div>
+    </div>
+    
+    <!-- Razorpay SDK -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    
+    <!-- Auto-verification helper -->
+    <script src="/js/razorpay-auto-verify.js"></script>
+    
+    <script>
+        async function createOrderAndPay() {
+            const amount = document.getElementById('amount').value;
+            const receipt = document.getElementById('receipt').value;
+            
+            const statusArea = document.getElementById('status-area');
+            const statusMessage = document.getElementById('status-message');
+            const resultDiv = document.getElementById('result');
+            
+            statusArea.style.display = 'block';
+            statusMessage.className = 'processing';
+            statusMessage.textContent = 'Creating order...';
+            resultDiv.innerHTML = '';
+            
+            try {
+                // 1. Create order
+                const response = await fetch('/api/razorpay-create-order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        amount: parseFloat(amount),
+                        currency: 'INR',
+                        receipt: receipt
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to create order: ' + response.statusText);
+                }
+                
+                const orderData = await response.json();
+                
+                if (!orderData.success) {
+                    throw new Error('Failed to create order: ' + (orderData.error || 'Unknown error'));
+                }
+                
+                statusMessage.textContent = 'Order created. Initializing payment...';
+                
+                // 2. Initialize payment with auto-verification
+                initRazorpayPayment(
+                    orderData,
+                    (result) => {
+                        // Success or processing callback
+                        if (result.status === 'success') {
+                            statusMessage.className = 'success';
+                            statusMessage.textContent = 'Payment verified successfully!';
+                        } else if (result.status === 'processing') {
+                            statusMessage.className = 'processing';
+                            statusMessage.textContent = result.message;
+                        } else if (result.status === 'pending') {
+                            statusMessage.className = 'processing';
+                            statusMessage.textContent = result.message;
+                        }
+                        
+                        resultDiv.innerHTML = '<pre>' + JSON.stringify(result.data, null, 2) + '</pre>';
+                    },
+                    (error) => {
+                        // Error callback
+                        statusMessage.className = 'error';
+                        statusMessage.textContent = 'Payment failed: ' + error.message;
+                        console.error('Payment error:', error);
+                    }
+                );
+            } catch (error) {
+                statusMessage.className = 'error';
+                statusMessage.textContent = error.message;
+                console.error('Error:', error);
+            }
+        }
+    </script>
+</body>
+</html> 

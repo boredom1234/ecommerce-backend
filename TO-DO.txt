@@ -1,0 +1,29 @@
+/* TO-DO List */
+
+[x] 1. Implement Staff Role: Restrict the ability to add staff members to administrators only. Staff members should have limited permissions and access, tailored to specific tasks, without full administrative privileges.
+
+[x] 2. Integrate Stock Management: Introduce a stock attribute to the Products entity to enable efficient inventory management, which is essential for an e-commerce platform.
+
+[x] 3. Enable User Profile Editing: Provide users with the capability to update their profile information, including phone numbers, addresses, and passwords.
+
+[x] 4. Admin Profile Management: Allow administrators to manage all user and administrator profiles effectively.
+   - Added detailed user profiles with metrics (order count, total spent, etc.)
+   - Implemented admin profiles with activity statistics
+   - Added account status management (lock/unlock accounts)
+   - Added user search and filtering by various criteria
+   - Implemented password reset functionality
+   - Added user statistics reporting
+
+[ ] 5. Implement Product Offers: Enable administrators to assign offers to products, ensuring proper reflection in the database.
+
+[x] 6. Implement a feature to automatically delete any newly registered user from the database if their `is_verified` column remains set to 0 for more than 20 seconds.
+
+
+
+
+/* NEED TO IMPLEMENT GOOGLE AUTHENTICATION */
+/* SECRET KEYS: */
+
+Client ID: 298726026318-mu2jnucfuh0r05d1qbnc05vmmfj88afs.apps.googleusercontent.com
+
+Client secret: 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
